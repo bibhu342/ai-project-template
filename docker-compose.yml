@@ -25,6 +25,7 @@ services:
     environment:
       DATABASE_URL: "postgresql+psycopg2://bibhu:supersecure@postgres:5432/ai_lab"
       JWT_SECRET: "change-this-in-prod"   # ← add THIS line
+      APP_SECRET: "${APP_SECRET}"
     ports:
       - "8000:8000"
 
