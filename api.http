@@ -1,0 +1,28 @@
+### Health
+GET http://127.0.0.1:8000/api/health
+
+### Create customer
+POST http://127.0.0.1:8000/api/customers
+Content-Type: application/json
+
+{
+  "name": "Test User",
+  "email": "test@example.com"
+}
+
+### List customers
+GET http://127.0.0.1:8000/api/customers
+
+### Get one (replace :id after you create)
+GET http://127.0.0.1:8000/api/customers/1
+
+### Update email
+PATCH http://127.0.0.1:8000/api/customers/1
+Content-Type: application/json
+
+{
+  "email": "test.updated@example.com"
+}
+
+### Delete
+DELETE http://127.0.0.1:8000/api/customers/1

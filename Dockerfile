@@ -1,25 +1,26 @@
 FROM python:3.11-slim
 WORKDIR /app
 
+# system deps
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential libpq-dev && \
     rm -rf /var/lib/apt/lists/*
 
+# python deps
 COPY requirements.api.txt .
 RUN pip install --no-cache-dir -r requirements.api.txt
 
-# ⬇️ ADD THESE
+# alembic + app
 COPY alembic.ini .
 COPY migrations ./migrations
-
 COPY app ./app
+
+# entrypoint
+COPY docker-entrypoint.sh .
+RUN chmod +x docker-entrypoint.sh
 
 ENV PYTHONUNBUFFERED=1
 EXPOSE 8000
 
-# optional: we’ll switch to entrypoint in Step 3
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
-
-COPY docker-entrypoint.sh .
-RUN chmod +x docker-entrypoint.sh
+# single CMD only
 CMD ["./docker-entrypoint.sh"]
