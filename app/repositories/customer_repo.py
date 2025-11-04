@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.models.customer import Customer
 
+
 def create_customer(db: Session, name: str, email: str) -> Customer | None:
     row = Customer(name=name, email=email)
     db.add(row)
@@ -14,13 +15,18 @@ def create_customer(db: Session, name: str, email: str) -> Customer | None:
     db.refresh(row)
     return row
 
+
 def get_customer_by_id(db: Session, customer_id: int) -> Customer | None:
     return db.get(Customer, customer_id)
+
 
 def get_customers(db: Session, limit: int = 100, offset: int = 0) -> list[Customer]:
     return db.query(Customer).offset(offset).limit(limit).all()
 
-def update_customer_email(db: Session, customer_id: int, new_email: str) -> Customer | None:
+
+def update_customer_email(
+    db: Session, customer_id: int, new_email: str
+) -> Customer | None:
     row = db.get(Customer, customer_id)
     if not row:
         return None
@@ -28,6 +34,7 @@ def update_customer_email(db: Session, customer_id: int, new_email: str) -> Cust
     db.commit()
     db.refresh(row)
     return row
+
 
 def delete_customer(db: Session, customer_id: int) -> bool:
     row = db.get(Customer, customer_id)

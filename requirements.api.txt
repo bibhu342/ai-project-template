@@ -5,3 +5,7 @@ SQLAlchemy==2.0.44
 psycopg2-binary==2.9.11
 alembic==1.17.1
 python-dotenv==1.2.1
+passlib[bcrypt]==1.7.4
+PyJWT==2.9.0
+python-multipart==0.0.12
+email-validator==2.3.0
