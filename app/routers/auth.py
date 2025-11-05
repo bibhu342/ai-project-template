@@ -40,7 +40,7 @@ def get_current_user(
     data = decode_token(token)
     if not data:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
-    from app.models.user import User
+    from ..models.user import User
 
     u = db.get(User, int(data["sub"]))
     if not u:
