@@ -251,8 +251,15 @@ jobs:
           mkdir -p tmp
           # Generate a draft migration file in migrations/versions
           alembic revision --autogenerate -m "CI drift check"
-          NEW_FILE=$(ls -1t migrations/versions | head -n 1)
-          FULL_PATH="migrations/versions/$NEW_FILE"
+          # Pick the most recent .py file only (exclude __pycache__ and dirs)
+          NEW_FILE=$(find migrations/versions -maxdepth 1 -name "*.py" -type f -printf '%T@ %p\n' | sort -rn | head -n 1 | cut -d' ' -f2-)
+
+          if [ -z "$NEW_FILE" ]; then
+            echo "No migration file generated; assuming no drift"
+            exit 0
+          fi
+
+          FULL_PATH="$NEW_FILE"
 
           # Extract the upgrade() block and check for any operations (op./sa.)
           UPGRADE_BLOCK=$(awk '/def upgrade\(\)/, /def downgrade\(\)/ {print}' "$FULL_PATH")
