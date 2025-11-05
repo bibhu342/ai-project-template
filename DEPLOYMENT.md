@@ -41,11 +41,77 @@
 
 ## 📋 Setup Checklist
 
-### On GitHub (Repository Settings → Secrets)
+### On GitHub
 
-Add these secrets:
+#### 1. Create Environments with Protection Rules
+
+**Path**: Repository Settings → Environments
+
+**Staging Environment**:
 
 ```
+Name: staging
+Protection rules:
+  ✓ Required reviewers: 1 (optional for staging, recommended for prod)
+  ✓ Wait timer: 0 minutes (can add delay if needed)
+
+Environment secrets:
+  STAGING_HOST          # your-server-ip or staging.example.com
+  STAGING_USER          # ubuntu / deploy / your-ssh-user
+  STAGING_SSH_KEY       # Private SSH key (entire content)
+  STAGING_DOMAIN        # staging.yourdomain.com
+  POSTGRES_PASSWORD     # Secure database password
+  ACME_EMAIL           # your@email.com (optional)
+```
+
+**Production Environment** (for future use):
+
+```
+Name: production
+Protection rules:
+  ✓ Required reviewers: 2 (recommended)
+  ✓ Wait timer: 5-10 minutes (allows cancellation window)
+  ✓ Restrict to specific branches: refs/heads/main, refs/tags/v*
+
+Environment secrets:
+  PROD_HOST
+  PROD_USER
+  PROD_SSH_KEY
+  PROD_DOMAIN
+  POSTGRES_PASSWORD
+  ACME_EMAIL
+```
+
+#### 2. How to Create Environments
+
+1. Go to **Repository Settings** → **Environments** → **New environment**
+2. Enter environment name (`staging` or `production`)
+3. Click **Configure environment**
+4. Add **Environment protection rules**:
+   - Enable "Required reviewers" and select team members
+   - Set "Wait timer" if you want a delay before deployment
+   - For production, enable "Deployment branches" and restrict to `main` or tags
+5. Add **Environment secrets**:
+   - Click "Add secret"
+   - Enter name and value
+   - Click "Add secret"
+6. Repeat for all required secrets listed above
+
+#### 3. Benefits of GitHub Environments
+
+- **Approval Workflow**: Require manual approval before production deployments
+- **Audit Trail**: Track who approved and deployed each release
+- **Secret Management**: Separate secrets per environment (staging vs production)
+- **Deployment Protection**: Prevent accidental deployments to production
+- **Branch Protection**: Restrict production deployments to specific branches/tags
+
+#### 4. Legacy Secrets (if not using Environments)
+
+If you prefer to use repository secrets instead of environment secrets:
+
+```
+Repository Settings → Secrets and variables → Actions → New repository secret
+
 Required:
 - STAGING_HOST          # your-server-ip or staging.example.com
 - STAGING_USER          # ubuntu / deploy / your-ssh-user
@@ -56,6 +122,8 @@ Required:
 Optional:
 - ACME_EMAIL           # your@email.com
 ```
+
+**Note**: Using environment secrets is strongly recommended for better security and deployment control.
 
 ### On Staging Server
 

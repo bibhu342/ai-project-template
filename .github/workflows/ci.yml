@@ -13,9 +13,37 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Job 0: Verify pip-compile lock is up to date
+  check-requirements:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pip-tools
+        run: pip install pip-tools
+
+      - name: Generate requirements.txt from requirements.in
+        run: pip-compile --quiet --no-emit-index-url requirements.in
+
+      - name: Check if requirements.txt is up to date
+        run: |
+          if ! git diff --exit-code requirements.txt; then
+            echo "❌ requirements.txt is out of sync with requirements.in"
+            echo "Run 'pip-compile requirements.in' locally and commit the changes"
+            exit 1
+          fi
+          echo "✅ requirements.txt is up to date"
+
   # Job 1: Python unit tests (fast feedback)
   test:
     runs-on: ubuntu-latest
+    needs: check-requirements
     services:
       postgres:
         image: postgres:16
@@ -100,7 +128,7 @@ jobs:
   # Job 2: Docker integration test (production-like validation)
   docker-test:
     runs-on: ubuntu-latest
-    needs: test # Run after unit tests pass
+    needs: [test, check-requirements] # Run after unit tests pass
 
     steps:
       - name: Checkout
@@ -194,7 +222,7 @@ jobs:
 
   schema-drift:
     runs-on: ubuntu-latest
-    needs: test
+    needs: [test, check-requirements]
     services:
       postgres:
         image: postgres:16

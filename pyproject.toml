@@ -18,3 +18,14 @@ extend-exclude = [
 
 [tool.ruff.lint]
 # No global ignores; per-file noqa is used where absolutely necessary
+
+[project]
+name = "ai-project-template"
+version = "0.1.0"
+description = "FastAPI project with PostgreSQL, Alembic migrations, and security best practices"
+requires-python = ">=3.11"
+
+[project.optional-dependencies]
+dev = [
+    "pip-tools>=7.0.0",  # pip-compile and pip-sync for dependency management
+]

@@ -20,6 +20,10 @@ jobs:
   deploy:
     name: Deploy to Staging Environment
     runs-on: ubuntu-latest
+
+    # Use GitHub Environment for secrets and protection rules
+    # Configure via: Repository Settings → Environments → staging
+    # Secrets: STAGING_HOST, STAGING_USER, STAGING_SSH_KEY, STAGING_DOMAIN, POSTGRES_PASSWORD
     environment:
       name: staging
       url: https://${{ secrets.STAGING_DOMAIN }}
