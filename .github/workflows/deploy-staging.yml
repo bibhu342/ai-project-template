@@ -3,13 +3,7 @@ name: Deploy to Staging
 on:
   push:
     tags:
-      - "v*.*.*-staging"
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: "Image tag to deploy"
-        required: true
-        default: "main"
+      - "v*.*.*"
 
 permissions:
   contents: read
@@ -17,186 +11,70 @@ permissions:
 
 jobs:
   deploy:
-    name: Deploy to Staging Environment
+    name: Deploy to Staging
     runs-on: ubuntu-latest
-
-    # Use GitHub Environment for secrets and protection rules
-    # Configure via: Repository Settings → Environments → staging
-    # Secrets: STAGING_HOST, STAGING_USER, STAGING_SSH_KEY, STAGING_DOMAIN, POSTGRES_PASSWORD
     environment:
       name: staging
-      url: https://${{ secrets.STAGING_DOMAIN }}
+      url: https://api.34.11.189.71.nip.io
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set image tag
-        id: set-tag
-        run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
-          else
-            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
-          fi
-
       - name: Setup SSH
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.STAGING_SSH_KEY }}
-
-      - name: Add staging server to known hosts
         run: |
           mkdir -p ~/.ssh
+          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
 
-      - name: Create deployment directory
+      - name: Deploy via SSH
         run: |
-          ssh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} "
-            mkdir -p ~/ai-project-template/deploy/staging
-          "
-
-      - name: Copy deployment files
-        run: |
-          scp -r deploy/staging/* ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }}:~/ai-project-template/deploy/staging/
-
-      - name: Login to GHCR on staging server
-        run: |
-          ssh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} "
-            echo ${{ secrets.GITHUB_TOKEN }} | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-          "
-
-      - name: Pull latest image
-        run: |
-          ssh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} "
-            cd ~/ai-project-template/deploy/staging
-            export IMAGE_TAG=${{ steps.set-tag.outputs.tag }}
-            docker compose pull api
-          "
-
-      - name: Backup current deployment
-        id: backup
-        run: |
-          BACKUP_TAG="backup-$(date +%Y%m%d-%H%M%S)"
-          echo "backup_tag=${BACKUP_TAG}" >> $GITHUB_OUTPUT
-
-          ssh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} "
-            # Get current running image
-            CURRENT_IMAGE=\$(docker inspect staging_api --format='{{.Config.Image}}' 2>/dev/null || echo 'none')
-            echo \"Current image: \$CURRENT_IMAGE\"
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} << 'ENDSSH'
+            set -euo pipefail
             
-            # Tag current image as backup if it exists
-            if [ \"\$CURRENT_IMAGE\" != \"none\" ]; then
-              docker tag \$CURRENT_IMAGE ghcr.io/${{ github.repository_owner }}/ai-project-template:${BACKUP_TAG} || true
-              echo \"Backup tagged as: ${BACKUP_TAG}\"
+            # Initialize repo if missing
+            if [ ! -d ~/app ]; then
+              git clone https://github.com/${{ github.repository }}.git ~/app
             fi
-          "
-
-      - name: Run database migrations
-        id: migrations
-        run: |
-          ssh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} "
-            cd ~/ai-project-template/deploy/staging
             
-            # Run migrations in a temporary container
-            docker compose run --rm \
-              -e DATABASE_URL=postgresql+psycopg://\${POSTGRES_USER}:\${POSTGRES_PASSWORD}@postgres:5432/\${POSTGRES_DB} \
-              api \
-              alembic upgrade head
-          "
-
-      - name: Deploy new version
-        id: deploy
-        run: |
-          ssh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} "
-            cd ~/ai-project-template/deploy/staging
-            export IMAGE_TAG=${{ steps.set-tag.outputs.tag }}
+            # Fetch and checkout tag
+            cd ~/app
+            git fetch --tags
+            git checkout ${GITHUB_REF_NAME}
             
-            # Stop and remove old containers
-            docker compose down
+            # Navigate to deploy directory
+            cd deploy/staging
+            
+            # Verify .env.staging exists
+            if [ ! -f .env.staging ]; then
+              echo "ERROR: .env.staging not found!"
+              exit 1
+            fi
+            
+            # Export environment variables
+            export IMAGE_NAME=${{ github.repository }}
+            export IMAGE_TAG=${GITHUB_REF_NAME}
+            
+            # Login to GHCR
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+            
+            # Pull latest images
+            docker compose pull
+            
+            # Run migrations
+            docker compose run --rm api alembic upgrade head
             
             # Start services
             docker compose up -d
             
-            echo \"Deployment started with image tag: ${{ steps.set-tag.outputs.tag }}\"
-          "
-
-      - name: Wait for services to be ready
-        run: |
-          ssh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} "
-            cd ~/ai-project-template/deploy/staging
+            # Wait for services to be ready
+            sleep 10
             
-            echo 'Waiting for services to be healthy...'
-            timeout 120 bash -c 'until docker compose ps | grep -q \"healthy\"; do sleep 2; done' || {
-              echo 'Services did not become healthy in time'
-              docker compose logs
-              exit 1
-            }
-            
-            echo 'All services are healthy'
-          "
-
-      - name: Run smoke tests
-        id: smoke-tests
-        run: |
-          ssh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} "
-            cd ~/ai-project-template/deploy/staging
+            # Run smoke tests
             chmod +x smoke.sh
-            ./smoke.sh https://${{ secrets.STAGING_DOMAIN }}
-          "
+            ./smoke.sh
+          ENDSSH
 
-      - name: Deployment successful
+      - name: Deployment Complete
         if: success()
         run: |
-          echo "✅ Deployment successful!"
-          echo "Version: ${{ steps.set-tag.outputs.tag }}"
-          echo "URL: https://${{ secrets.STAGING_DOMAIN }}"
-
-      - name: Rollback on failure
-        if: failure() && steps.deploy.outcome == 'success'
-        run: |
-          echo "❌ Deployment failed. Rolling back..."
-
-          ssh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} "
-            cd ~/ai-project-template/deploy/staging
-            
-            # Stop failed deployment
-            docker compose down
-            
-            # Restore backup image if it exists
-            BACKUP_IMAGE=ghcr.io/${{ github.repository_owner }}/ai-project-template:${{ steps.backup.outputs.backup_tag }}
-            if docker image inspect \$BACKUP_IMAGE > /dev/null 2>&1; then
-              echo \"Rolling back to: \$BACKUP_IMAGE\"
-              
-              # Tag backup as 'main' temporarily
-              docker tag \$BACKUP_IMAGE ghcr.io/${{ github.repository_owner }}/ai-project-template:rollback-temp
-              
-              # Start with rollback image
-              export IMAGE_TAG=rollback-temp
-              docker compose up -d
-              
-              echo \"Rollback completed\"
-            else
-              echo \"No backup image found. Manual intervention required.\"
-              exit 1
-            fi
-          "
-
-      - name: Notify on failure
-        if: failure()
-        run: |
-          echo "::error::Staging deployment failed and rollback was attempted"
-          echo "::error::Please check the logs and staging environment"
-
-      - name: Cleanup old images
-        if: always()
-        run: |
-          ssh ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} "
-            # Remove dangling images
-            docker image prune -f
-            
-            # Keep only last 5 backup tags
-            docker images ghcr.io/${{ github.repository_owner }}/ai-project-template --format '{{.Tag}}' | \
-              grep '^backup-' | sort -r | tail -n +6 | \
-              xargs -r -I {} docker rmi ghcr.io/${{ github.repository_owner }}/ai-project-template:{} || true
-          "
+          echo "✅ Staging deployment successful!"
+          echo "URL: https://api.34.11.189.71.nip.io"
