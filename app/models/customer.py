@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import Integer, String, DateTime, func
+from sqlalchemy import Integer, String, DateTime, text
 from app.database import Base
 
 
@@ -13,5 +13,5 @@ class Customer(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     created_at: Mapped["DateTime"] = mapped_column(
-        DateTime(timezone=True), server_default=func.now()
+        DateTime(timezone=True), server_default=text("now()"), nullable=False
     )
