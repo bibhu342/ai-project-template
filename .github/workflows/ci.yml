@@ -247,24 +247,23 @@ jobs:
           DATABASE_URL: ${{ env.DATABASE_URL }}
           PYTHONPATH: ${{ env.PYTHONPATH }}
         run: |
-          BASE_COUNT=$(ls -1 migrations/versions 2>/dev/null | wc -l || echo 0)
-          # Attempt to autogenerate a new migration
-          set +e
-          alembic revision --autogenerate -m "CI drift check"
-          STATUS=$?
           set -e
-          if [ $STATUS -ne 0 ]; then
-            echo "alembic revision failed"
-            exit 1
-          fi
-          NEW_COUNT=$(ls -1 migrations/versions 2>/dev/null | wc -l || echo 0)
-          if [ "$NEW_COUNT" -gt "$BASE_COUNT" ]; then
+          TMP_FILE=$(mktemp)
+          # Generate draft migration to stdout only (do not write to versions/)
+          alembic revision --autogenerate -m "CI drift check" --stdout > "$TMP_FILE"
+
+          # Extract the upgrade() block and check for any operations (op./sa.)
+          UPGRADE_BLOCK=$(awk '/def upgrade\(\)/, /def downgrade\(\)/ {print}' "$TMP_FILE")
+
+          if echo "$UPGRADE_BLOCK" | grep -qE 'op\.|sa\.'; then
             echo "Model drift detected"
+            echo "--- Draft migration (truncated) ---"
+            sed -n '1,200p' "$TMP_FILE"
             exit 1
           else
             echo "No model drift detected"
           fi
 
-      - name: Cleanup generated draft revision if any
+      - name: Cleanup temp files
         run: |
-          git clean -fd || true
+          rm -f /tmp/tmp.* || true
