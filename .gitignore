@@ -5,6 +5,7 @@ __pycache__/
 *.pyd
 .env
 .env.*
+!.env.staging.example
 .envrc
 .venv/
 /.venv-check/
