@@ -5,76 +5,60 @@ on:
     tags:
       - "v*.*.*"
 
-permissions:
-  contents: read
-  packages: read
-
 jobs:
   deploy:
-    name: Deploy to Staging
     runs-on: ubuntu-latest
-    environment:
-      name: staging
-      url: https://api.34.11.189.71.nip.io
+    environment: staging
 
     steps:
-      - name: Setup SSH
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-          ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
-
-      - name: Deploy via SSH
-        run: |
-          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=no ${{ secrets.STAGING_USER }}@${{ secrets.STAGING_HOST }} << 'ENDSSH'
-            set -euo pipefail
-            
-            # Initialize repo if missing
+      - name: Deploy to Staging Server
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_KEY }}
+          script_stop: true
+          script: |
+            # Ensure ~/app exists and is a git repo
             if [ ! -d ~/app ]; then
-              git clone https://github.com/${{ github.repository }}.git ~/app
+              mkdir -p ~/app
             fi
-            
-            # Fetch and checkout tag
             cd ~/app
-            git fetch --tags
-            git checkout ${GITHUB_REF_NAME}
-            
-            # Navigate to deploy directory
+            if [ ! -d .git ]; then
+              git init
+              git remote add origin ${{ github.server_url }}/${{ github.repository }}.git
+            fi
+
+            # Fetch the tag and checkout
+            git fetch --depth=1 origin ${{ github.ref }}
+            git checkout -B staging-deploy FETCH_HEAD
+
+            # Navigate to deploy/staging
             cd deploy/staging
-            
+
             # Verify .env.staging exists
             if [ ! -f .env.staging ]; then
-              echo "ERROR: .env.staging not found!"
+              echo "ERROR: .env.staging not found"
               exit 1
             fi
-            
-            # Export environment variables
+
+            # Export image variables
             export IMAGE_NAME=${{ github.repository }}
-            export IMAGE_TAG=${GITHUB_REF_NAME}
-            
+            export IMAGE_TAG=${{ github.ref_name }}
+
             # Login to GHCR
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
+
             # Pull latest images
-            docker compose pull
-            
+            docker compose pull || true
+
             # Run migrations
             docker compose run --rm api alembic upgrade head
-            
+
             # Start services
             docker compose up -d
-            
-            # Wait for services to be ready
-            sleep 10
-            
+
             # Run smoke tests
+            sleep 10
             chmod +x smoke.sh
             ./smoke.sh
-          ENDSSH
-
-      - name: Deployment Complete
-        if: success()
-        run: |
-          echo "✅ Staging deployment successful!"
-          echo "URL: https://api.34.11.189.71.nip.io"
