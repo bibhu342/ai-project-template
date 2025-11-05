@@ -23,9 +23,10 @@ if "app" in sys.modules:
 # Explicitly load our local 'app' package from path to guarantee resolution
 app_init_path = PROJECT_ROOT / "app" / "__init__.py"
 if app_init_path.exists():
-    spec = importlib.util.spec_from_file_location("app", str(app_init_path))
+    spec = importlib.util.spec_from_file_location(
+        "app", str(app_init_path), submodule_search_locations=[str(app_init_path.parent)]
+    )
     if spec and spec.loader:
         app_module = importlib.util.module_from_spec(spec)
-        app_module.__path__ = [str(app_init_path.parent)]  # type: ignore[attr-defined]
         sys.modules["app"] = app_module
         spec.loader.exec_module(app_module)
