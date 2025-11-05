@@ -3,25 +3,29 @@ services:
     image: postgres:16
     container_name: pg16_ai_lab
     environment:
-      POSTGRES_USER: bibhu
-      POSTGRES_PASSWORD: supersecure
-      POSTGRES_DB: ai_lab
+      POSTGRES_USER: ${POSTGRES_USER:-bibhu}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-supersecure}
+      POSTGRES_DB: ${POSTGRES_DB:-ai_lab}
     ports:
       - "5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U bibhu -d ai_lab"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bibhu} -d ${POSTGRES_DB:-ai_lab}"]
       interval: 5s
       timeout: 5s
-      retries: 10
+      retries: 5
+    volumes:
+      - pgdata:/var/lib/postgresql/data
 
   api:
-    image: ai-project-template-api
+    build: .
     container_name: ai_api
     depends_on:
       postgres:
         condition: service_healthy
     environment:
-      DATABASE_URL: postgresql+psycopg://bibhu:supersecure@postgres:5432/ai_lab
+      DATABASE_URL: "postgresql+psycopg2://bibhu:supersecure@postgres:5432/ai_lab"
+      JWT_SECRET: "change-this-in-prod"   # ← add THIS line
+      APP_SECRET: "${APP_SECRET}"
     ports:
       - "8000:8000"
 
