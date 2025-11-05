@@ -1,0 +1,19 @@
+# Local pre-commit hooks to keep formatting and linting consistent with CI
+# Uses the project's own virtual environment (language: system), so it
+# respects versions and settings from requirements.txt and pyproject.toml.
+
+repos:
+  - repo: local
+    hooks:
+      - id: black
+        name: black (project env)
+        entry: black
+        language: system
+        types: [python]
+        stages: [commit]
+      - id: ruff
+        name: ruff (project env)
+        entry: ruff check
+        language: system
+        types: [python]
+        stages: [commit]
