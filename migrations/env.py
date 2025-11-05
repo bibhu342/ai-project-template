@@ -8,10 +8,31 @@ from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
-# Ensure project root is on sys.path so `import app...` works in CI and CLIs
+"""
+Make the repository's local "app" package resolvable even if a 3rd‑party
+package named "app" is preinstalled in the environment (common on CI).
+
+Strategy:
+- Prepend the repo root to sys.path so our local packages are found first.
+- If a foreign "app" module is already imported, remove it from sys.modules
+  so the subsequent import picks up our local package.
+"""
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
+
+# If a third-party "app" module was imported earlier, drop it to avoid
+# shadowing our local package (which lives at PROJECT_ROOT / "app").
+if "app" in sys.modules:
+    try:
+        # Only drop it if it's not our local package path
+        mod = sys.modules["app"]
+        mod_file = getattr(mod, "__file__", "") or ""
+        if "ai-project-template" not in mod_file.replace("\\", "/"):
+            del sys.modules["app"]
+    except Exception:
+        # On any ambiguity, prefer deleting to let import resolve fresh
+        del sys.modules["app"]
 
 from app.database import Base
 import app.models.customer  # noqa: F401
