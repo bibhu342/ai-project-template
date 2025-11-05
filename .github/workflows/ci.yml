@@ -248,7 +248,8 @@ jobs:
           PYTHONPATH: ${{ env.PYTHONPATH }}
         run: |
           set -e
-          TMP_FILE=$(mktemp)
+          mkdir -p tmp
+          TMP_FILE="tmp/alembic-drift.py"
           # Generate draft migration to stdout only (do not write to versions/)
           alembic revision --autogenerate -m "CI drift check" --stdout > "$TMP_FILE"
 
@@ -259,11 +260,27 @@ jobs:
             echo "Model drift detected"
             echo "--- Draft migration (truncated) ---"
             sed -n '1,200p' "$TMP_FILE"
+            # Also write to job summary for easy discovery
+            {
+              echo "## Alembic draft migration (truncated)"
+              echo
+              echo '```python'
+              sed -n '1,200p' "$TMP_FILE"
+              echo '```'
+            } >> "$GITHUB_STEP_SUMMARY"
             exit 1
           else
             echo "No model drift detected"
           fi
 
+      - name: Upload draft migration artifact
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: alembic-drift
+          path: tmp/alembic-drift.py
+
       - name: Cleanup temp files
+        if: always()
         run: |
-          rm -f /tmp/tmp.* || true
+          rm -rf tmp || true
