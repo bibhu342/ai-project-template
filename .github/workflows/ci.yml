@@ -1,3 +1,4 @@
+# .github/workflows/ci.yml
 name: CI
 
 on:
@@ -6,6 +7,7 @@ on:
   pull_request:
     branches: [main]
   workflow_dispatch:
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -19,7 +21,7 @@ jobs:
         ports:
           - 5432:5432
         options: >-
-          --health-cmd="pg_isready -U bibhu" --health-interval=5s --health-timeout=5s --health-retries=10
+          --health-cmd="pg_isready -U bibhu -d ai_lab" --health-interval=5s --health-timeout=5s --health-retries=10
 
     steps:
       - name: Checkout
@@ -40,37 +42,40 @@ jobs:
 
       - name: Install postgresql client (for pg_isready)
         run: |
-          sudo apt-get update -y
+          sudo apt-get update
           sudo apt-get install -y postgresql-client
 
-      - name: Install dependencies (app + alembic + test)
+      - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-          # belt-and-suspenders to avoid "command not found"
-          pip install alembic psycopg2-binary pytest httpx
+          pip install pytest httpx
+
+      - name: Export env (PYTHONPATH + DATABASE_URL)
+        run: |
+          echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
+          echo "DATABASE_URL=postgresql://bibhu:bibhu@localhost:5432/ai_lab" >> $GITHUB_ENV
 
       - name: Wait for Postgres
         run: |
-          echo "Waiting for Postgres..."
+          echo "Waiting for Postgres to be ready..."
           for i in $(seq 1 60); do
-            pg_isready -h localhost -p 5432 -U bibhu && break
-            echo "not ready ($i/60)"; sleep 1
+            pg_isready -h localhost -p 5432 -U bibhu -d ai_lab && break
+            echo "Postgres not ready yet ($i/60)..."
+            sleep 1
           done
-
-      - name: Set DATABASE_URL
-        run: echo "DATABASE_URL=postgresql+psycopg2://bibhu:bibhu@localhost:5432/ai_lab" >> $GITHUB_ENV
 
       - name: Run Alembic migrations
         env:
           DATABASE_URL: ${{ env.DATABASE_URL }}
+          PYTHONPATH: ${{ env.PYTHONPATH }}
         run: |
-          alembic --version
-          alembic upgrade head
-          alembic current
+          # use module form so the same interpreter runs it
+          python -m alembic -c migrations/alembic.ini upgrade head
 
       - name: Run tests
         env:
           DATABASE_URL: ${{ env.DATABASE_URL }}
+          PYTHONPATH: ${{ env.PYTHONPATH }}
         run: |
           pytest -q
