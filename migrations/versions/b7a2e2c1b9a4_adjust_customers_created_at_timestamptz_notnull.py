@@ -29,13 +29,7 @@ def upgrade() -> None:
         existing_type=sa.DateTime(timezone=False),
         postgresql_using="created_at AT TIME ZONE 'UTC'",
     )
-    # Ensure server default exists (CURRENT_TIMESTAMP)
-    op.alter_column(
-        "customers",
-        "created_at",
-        server_default=sa.text("CURRENT_TIMESTAMP"),
-        existing_server_default=sa.text("now()"),
-    )
+    # Keep existing server default (now()) as defined in baseline; models use func.now()
     # Add NOT NULL constraint
     op.alter_column(
         "customers",
@@ -53,13 +47,7 @@ def downgrade() -> None:
         nullable=True,
         existing_nullable=False,
     )
-    # Revert server default to now()
-    op.alter_column(
-        "customers",
-        "created_at",
-        server_default=sa.text("now()"),
-        existing_server_default=sa.text("CURRENT_TIMESTAMP"),
-    )
+    # Server default unchanged in upgrade; no action needed here
     # Revert type back to TIMESTAMP WITHOUT TIME ZONE
     op.alter_column(
         "customers",
