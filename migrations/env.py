@@ -22,7 +22,7 @@ target_metadata = Base.metadata
 # Read DB URL from env (Docker compose sets this)
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql+psycopg2://bibhu:supersecure@localhost:5432/ai_lab",
+    "postgresql+psycopg://bibhu:supersecure@localhost:5432/ai_lab",
 )
 # Ensure alembic sees the URL
 config.set_main_option("sqlalchemy.url", DATABASE_URL)
