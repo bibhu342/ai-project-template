@@ -1,11 +1,18 @@
-import sys, pathlib, uuid
+import sys
+import pathlib
+import uuid
+
 sys.path.append(str(pathlib.Path(__file__).resolve().parents[1]))
 
 from app.db import SessionLocal
 from app.repositories.customer_repo import (
-    create_customer, get_customer_by_id, get_customers,
-    update_customer_email, delete_customer
+    create_customer,
+    get_customer_by_id,
+    get_customers,
+    update_customer_email,
+    delete_customer,
 )
+
 
 def main():
     db = SessionLocal()
@@ -29,6 +36,7 @@ def main():
         print("Remaining:", [c.email for c in get_customers(db)])
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     main()

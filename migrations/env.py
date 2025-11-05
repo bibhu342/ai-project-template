@@ -49,6 +49,7 @@ if app_init_path.exists():
 
 # Now that we've ensured "app" is our local package, import normally
 from app.database import Base
+
 # Import models to register them on Base.metadata
 import app.models  # noqa: F401 - registers models on Base.metadata
 

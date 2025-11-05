@@ -4,6 +4,7 @@ from app.main import app
 
 client = TestClient(app)
 
+
 def test_customers_crud_flow():
     # 1) create
     payload = {"name": "PyTest User", "email": "pytest.user@example.com"}
@@ -26,7 +27,9 @@ def test_customers_crud_flow():
     assert r.json()["id"] == cid
 
     # 4) patch email
-    r = client.patch(f"/api/customers/{cid}", json={"email": "pytest.updated@example.com"})
+    r = client.patch(
+        f"/api/customers/{cid}", json={"email": "pytest.updated@example.com"}
+    )
     assert r.status_code == 200
     assert r.json()["email"] == "pytest.updated@example.com"
 

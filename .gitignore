@@ -7,6 +7,7 @@ __pycache__/
 .env.*
 .envrc
 .venv/
+/.venv-check/
 env/
 env_dml/
 .ipynb_checkpoints
