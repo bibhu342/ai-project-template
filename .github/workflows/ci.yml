@@ -57,8 +57,9 @@ jobs:
           pip install pytest httpx black ruff coverage bandit pip-audit
       - name: Lint & format check
         run: |
-          black --check .
-          ruff check .
+          # Exclude backup/legacy folders from style checks
+          black --check . --exclude "migrations_bak"
+          ruff check . --exclude migrations_bak
 
       - name: Security checks (Bandit + pip-audit)
         run: |
