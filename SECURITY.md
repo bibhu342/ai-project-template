@@ -27,7 +27,7 @@ We take security vulnerabilities seriously and appreciate your efforts to respon
 
 Instead, report security vulnerabilities via email to:
 
-📧 **bibhumohanty034@gmail.com**
+📧 **bibhu342@gmail.com**
 
 ### What to Include
 
@@ -144,7 +144,7 @@ This project follows security best practices including:
 
 For security-related questions or concerns, contact:
 
-📧 bibhumohanty034@gmail.com
+📧 bibhu342@gmail.com
 
 For general issues or feature requests, please use GitHub Issues.
 
