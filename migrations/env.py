@@ -47,27 +47,10 @@ if app_init_path.exists():
         spec.loader.exec_module(app_module)
 
 
-# Import Base and model modules by file path to avoid any third‑party
-# package name collisions with a top-level module named "app".
-def _load_module_from_path(name: str, path: str):
-    spec = importlib.util.spec_from_file_location(name, path)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Cannot load module {name} from {path}")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-# Load app.database to get SQLAlchemy Base
-_db_mod = _load_module_from_path("app_database", str(PROJECT_ROOT / "app" / "database.py"))
-Base = getattr(_db_mod, "Base")
-
-# Import all models so their tables are registered on Base.metadata
-_models_dir = PROJECT_ROOT / "app" / "models"
-for _p in _models_dir.glob("*.py"):
-    if _p.name == "__init__.py":
-        continue
-    _load_module_from_path(f"app_model_{_p.stem}", str(_p))
+# Now that we've ensured "app" is our local package, import normally
+from app.database import Base
+# Import models to register them on Base.metadata
+import app.models  # noqa: F401 - registers models on Base.metadata
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
