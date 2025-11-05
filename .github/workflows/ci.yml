@@ -249,36 +249,47 @@ jobs:
         run: |
           set -e
           mkdir -p tmp
-          TMP_FILE="tmp/alembic-drift.py"
-          # Generate draft migration to stdout only (do not write to versions/)
-          alembic revision --autogenerate -m "CI drift check" --stdout > "$TMP_FILE"
+          # Generate a draft migration file in migrations/versions
+          alembic revision --autogenerate -m "CI drift check"
+          NEW_FILE=$(ls -1t migrations/versions | head -n 1)
+          FULL_PATH="migrations/versions/$NEW_FILE"
 
           # Extract the upgrade() block and check for any operations (op./sa.)
-          UPGRADE_BLOCK=$(awk '/def upgrade\(\)/, /def downgrade\(\)/ {print}' "$TMP_FILE")
+          UPGRADE_BLOCK=$(awk '/def upgrade\(\)/, /def downgrade\(\)/ {print}' "$FULL_PATH")
 
           if echo "$UPGRADE_BLOCK" | grep -qE 'op\.|sa\.'; then
             echo "Model drift detected"
             echo "--- Draft migration (truncated) ---"
-            sed -n '1,200p' "$TMP_FILE"
+            sed -n '1,200p' "$FULL_PATH"
+            cp "$FULL_PATH" tmp/alembic-drift.py
             # Also write to job summary for easy discovery
             {
               echo "## Alembic draft migration (truncated)"
               echo
               echo '```python'
-              sed -n '1,200p' "$TMP_FILE"
+              sed -n '1,200p' "$FULL_PATH"
               echo '```'
             } >> "$GITHUB_STEP_SUMMARY"
-            exit 1
+            # Mark drift; do not exit yet to allow artifact upload
+            touch tmp/DRIFT_DETECTED
           else
             echo "No model drift detected"
           fi
+          # Always clean up the generated draft from the repo tree
+          rm -f "$FULL_PATH"
 
       - name: Upload draft migration artifact
-        if: failure()
+        if: ${{ hashFiles('tmp/alembic-drift.py') != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: alembic-drift
           path: tmp/alembic-drift.py
+
+      - name: Fail if drift detected
+        if: ${{ hashFiles('tmp/DRIFT_DETECTED') != '' }}
+        run: |
+          echo "Model drift detected"
+          exit 1
 
       - name: Cleanup temp files
         if: always()
