@@ -2,9 +2,9 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from app.deps import get_db
-from app.schemas.customer import CustomerCreate, CustomerOut, CustomerUpdateEmail
-from app.repositories.customer_repo import (
+from ..deps import get_db
+from ..schemas.customer import CustomerCreate, CustomerOut, CustomerUpdateEmail
+from ..repositories.customer_repo import (
     create_customer,
     get_customer_by_id,
     get_customers,
