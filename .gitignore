@@ -13,6 +13,9 @@ env_dml/
 .ipynb_checkpoints
 .pytest_cache/
 .mypy_cache/
+.coverage
+coverage.xml
+htmlcov/
 
 # Data / models (ML model files, not source code)
 data/raw/
