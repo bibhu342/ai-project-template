@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import os
 from typing import Generator
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 # Read from env. In docker compose, this is already set.
@@ -25,7 +25,18 @@ SessionLocal = sessionmaker(
     future=True,
 )
 
-Base = declarative_base()
+# Define naming convention for constraints and indexes
+# This ensures consistent naming across environments and prevents Alembic drift
+convention = {
+    "ix": "ix_%(column_0_label)s",
+    "uq": "uq_%(table_name)s_%(column_0_name)s",
+    "ck": "ck_%(table_name)s_%(constraint_name)s",
+    "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
+    "pk": "pk_%(table_name)s",
+}
+
+metadata = MetaData(naming_convention=convention)
+Base = declarative_base(metadata=metadata)
 
 
 def get_db() -> Generator:
