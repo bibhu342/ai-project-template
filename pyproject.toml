@@ -1,0 +1,20 @@
+[tool.black]
+# Keep defaults; just exclude backup/legacy paths so local runs match CI behavior
+exclude = '''
+(
+  /migrations_bak
+  | \.venv
+  | \.venv-check
+  | .*\.bak$
+)
+'''
+
+[tool.ruff]
+extend-exclude = [
+  "migrations_bak",
+  ".venv",
+  ".venv-check",
+]
+
+[tool.ruff.lint]
+# No global ignores; per-file noqa is used where absolutely necessary
