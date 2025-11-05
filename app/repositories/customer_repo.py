@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
-from app.models.customer import Customer
+from ..models.customer import Customer
 
 
 def create_customer(db: Session, name: str, email: str) -> Customer | None:

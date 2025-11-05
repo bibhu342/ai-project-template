@@ -1,14 +1,56 @@
-# migrations/env.py
 from __future__ import annotations
 
 import os
+import sys
+from pathlib import Path
+import importlib.util
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
 
+"""
+Make the repository's local "app" package resolvable even if a 3rd‑party
+package named "app" is preinstalled in the environment (common on CI).
+
+Strategy:
+- Prepend the repo root to sys.path so our local packages are found first.
+- If a foreign "app" module is already imported, remove it from sys.modules
+  so the subsequent import picks up our local package.
+"""
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
+# If a third-party "app" module was imported earlier, drop it to avoid
+# shadowing our local package (which lives at PROJECT_ROOT / "app").
+if "app" in sys.modules:
+    try:
+        # Only drop it if it's not our local package path
+        mod = sys.modules["app"]
+        mod_file = getattr(mod, "__file__", "") or ""
+        if "ai-project-template" not in mod_file.replace("\\", "/"):
+            del sys.modules["app"]
+    except Exception:
+        # On any ambiguity, prefer deleting to let import resolve fresh
+        del sys.modules["app"]
+
+# Force-load our local "app" package so submodule imports resolve under it.
+# This avoids accidentally importing a third-party package named "app".
+app_init_path = PROJECT_ROOT / "app" / "__init__.py"
+if app_init_path.exists():
+    spec = importlib.util.spec_from_file_location("app", str(app_init_path))
+    if spec and spec.loader:
+        app_module = importlib.util.module_from_spec(spec)
+        # Point package path to the local app directory so "app.*" imports work
+        app_module.__path__ = [str(app_init_path.parent)]  # type: ignore[attr-defined]
+        sys.modules["app"] = app_module
+        spec.loader.exec_module(app_module)
+
+
+# Now that we've ensured "app" is our local package, import normally
 from app.database import Base
-import app.models.customer  # noqa: F401
-import app.models.user  # noqa: F401
+# Import models to register them on Base.metadata
+import app.models  # noqa: F401 - registers models on Base.metadata
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 
-from app.db import get_db
-from app.schemas.user import SignupIn, UserOut
-from app.repositories.user_repo import get_user_by_email, create_user
-from app.security import (
+from ..db import get_db
+from ..schemas.user import SignupIn, UserOut
+from ..repositories.user_repo import get_user_by_email, create_user
+from ..security import (
     hash_password,
     verify_password,
     create_access_token,
@@ -40,7 +40,7 @@ def get_current_user(
     data = decode_token(token)
     if not data:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
-    from app.models.user import User
+    from ..models.user import User
 
     u = db.get(User, int(data["sub"]))
     if not u:

@@ -13,10 +13,10 @@ env_dml/
 .pytest_cache/
 .mypy_cache/
 
-# Data / models
+# Data / models (ML model files, not source code)
 data/raw/
 data/processed/
-models/
+/models/
 reports/
 
 # VS Code

@@ -54,7 +54,7 @@ jobs:
       - name: Export env (PYTHONPATH + DATABASE_URL)
         run: |
           echo "PYTHONPATH=$PWD" >> $GITHUB_ENV
-          echo "DATABASE_URL=postgresql://bibhu:bibhu@localhost:5432/ai_lab" >> $GITHUB_ENV
+          echo "DATABASE_URL=postgresql+psycopg://bibhu:bibhu@localhost:5432/ai_lab" >> $GITHUB_ENV
 
       - name: Wait for Postgres
         run: |
@@ -71,7 +71,7 @@ jobs:
           PYTHONPATH: ${{ env.PYTHONPATH }}
         run: |
           # use module form so the same interpreter runs it
-          python -m alembic -c migrations/alembic.ini upgrade head
+          python -m alembic upgrade head
 
       - name: Run tests
         env:
