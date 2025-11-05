@@ -4,6 +4,7 @@ from __future__ import annotations
 import os
 import sys
 from pathlib import Path
+import importlib.util
 from logging.config import fileConfig
 from sqlalchemy import engine_from_config, pool
 from alembic import context
@@ -33,6 +34,18 @@ if "app" in sys.modules:
     except Exception:
         # On any ambiguity, prefer deleting to let import resolve fresh
         del sys.modules["app"]
+
+# Force-load our local "app" package so submodule imports resolve under it.
+# This avoids accidentally importing a third-party package named "app".
+app_init_path = PROJECT_ROOT / "app" / "__init__.py"
+if app_init_path.exists():
+    spec = importlib.util.spec_from_file_location("app", str(app_init_path))
+    if spec and spec.loader:
+        app_module = importlib.util.module_from_spec(spec)
+        # Point package path to the local app directory so "app.*" imports work
+        app_module.__path__ = [str(app_init_path.parent)]  # type: ignore[attr-defined]
+        sys.modules["app"] = app_module
+        spec.loader.exec_module(app_module)
 
 from app.database import Base
 import app.models.customer  # noqa: F401
