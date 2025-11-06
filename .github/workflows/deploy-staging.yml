@@ -11,6 +11,28 @@ jobs:
     environment: staging
 
     steps:
+      - name: Wait for Docker image to be built
+        run: |
+          IMAGE_TAG="${{ github.ref_name }}"
+          IMAGE_TAG="${IMAGE_TAG#v}"
+          IMAGE_NAME="${{ github.repository }}"
+
+          echo "Waiting for image ghcr.io/${IMAGE_NAME}:${IMAGE_TAG} to be available..."
+
+          for i in {1..30}; do
+            if docker manifest inspect ghcr.io/${IMAGE_NAME}:${IMAGE_TAG} > /dev/null 2>&1; then
+              echo "Image found!"
+              exit 0
+            fi
+            echo "Attempt $i: Image not yet available, waiting 10 seconds..."
+            sleep 10
+          done
+
+          echo "ERROR: Image not available after 5 minutes"
+          exit 1
+        env:
+          DOCKER_CLI_EXPERIMENTAL: enabled
+
       - name: Setup SSH agent, key, and known_hosts
         run: |
           mkdir -p ~/.ssh
