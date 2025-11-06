@@ -7,7 +7,7 @@ EMAIL="smoketest_${TIMESTAMP}@example.com"
 PASSWORD="TestPassword123!"
 
 echo "[smoke] Testing health endpoint..."
-curl -sf "${BASE_URL}/health" | jq .
+curl -sf "${BASE_URL}/api/health" | jq .
 
 echo "[smoke] Registering user ${EMAIL}..."
 curl -sf -X POST "${BASE_URL}/auth/register" \
