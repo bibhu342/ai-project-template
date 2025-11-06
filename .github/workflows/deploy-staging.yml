@@ -22,15 +22,28 @@ jobs:
           printf '%s' "${{ secrets.STAGING_SSH_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
 
+      - name: Show SSH public key and fingerprint (for server authorized_keys)
+        run: |
+          set -euo pipefail
+          # Derive public key from the private key and print fingerprint for comparison
+          ssh-keygen -y -f ~/.ssh/deploy_key > ~/.ssh/deploy_key.pub
+          echo "::group::SSH public key fingerprint used by runner"
+          ssh-keygen -lf ~/.ssh/deploy_key.pub
+          echo "::endgroup::"
+          echo "::group::SSH public key line to add to server authorized_keys (safe to share)"
+          cat ~/.ssh/deploy_key.pub
+          echo "::endgroup::"
+
       - name: Deploy via SSH
         env:
           SERVER: ${{ secrets.STAGING_HOST }}
+          USER: ${{ secrets.STAGING_USER }}
         run: |
           # Preflight: verbose SSH to validate auth and show which key is offered
-          ssh -vvv -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes bibhu342@${SERVER} 'echo preflight-ok'
+          ssh -vvv -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes ${USER}@${SERVER} 'echo preflight-ok'
 
           # Deploy via heredoc
-          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes bibhu342@${SERVER} << 'ENDSSH'
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes ${USER}@${SERVER} << 'ENDSSH'
             set -euo pipefail
 
             # Ensure ~/app exists and is a git repo
