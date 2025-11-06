@@ -58,7 +58,9 @@ def test_cascade_delete_notes_when_customer_deleted():
     # Verify notes exist
     r = client.get(f"/api/customers/{customer_id}/notes")
     assert r.status_code == 200
-    assert len(r.json()) == 2
+    response_data = r.json()
+    assert response_data["total"] == 2
+    assert len(response_data["items"]) == 2
 
     # Delete the customer
     r = client.delete(f"/api/customers/{customer_id}")
@@ -129,7 +131,9 @@ def test_cascade_delete_notes_when_user_deleted():
     # Verify notes exist
     r = client.get(f"/api/customers/{customer_id}/notes")
     assert r.status_code == 200
-    assert len(r.json()) == 2
+    response_data = r.json()
+    assert response_data["total"] == 2
+    assert len(response_data["items"]) == 2
 
     # Note: In a real app, you'd need a DELETE /api/users/{id} endpoint
     # For now, we'll just verify the foreign key constraint exists by checking
@@ -199,7 +203,9 @@ def test_notes_remain_when_other_customer_deleted():
     # Verify customer2's notes still exist
     r = client.get(f"/api/customers/{customer2_id}/notes")
     assert r.status_code == 200
-    notes = r.json()
+    response_data = r.json()
+    assert response_data["total"] == 1
+    notes = response_data["items"]
     assert len(notes) == 1
     assert notes[0]["content"] == "Note for C2"
 

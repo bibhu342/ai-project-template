@@ -14,17 +14,38 @@ def create_note(db: Session, customer_id: int, user_id: int, content: str) -> No
 
 
 def get_notes_by_customer(
-    db: Session, customer_id: int, limit: int = 100, offset: int = 0
+    db: Session,
+    customer_id: int,
+    limit: int = 100,
+    offset: int = 0,
+    search: str | None = None,
 ) -> list[Note]:
-    """Get all notes for a specific customer."""
-    return (
+    """Get all notes for a specific customer with optional search."""
+    query = (
         db.query(Note)
         .filter(Note.customer_id == customer_id)
         .order_by(Note.created_at.desc())
-        .offset(offset)
-        .limit(limit)
-        .all()
     )
+
+    # Add search filter if provided
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.filter(Note.content.ilike(search_pattern))
+
+    return query.offset(offset).limit(limit).all()
+
+
+def count_notes_by_customer(
+    db: Session, customer_id: int, search: str | None = None
+) -> int:
+    """Count total notes for a customer with optional search filter."""
+    query = db.query(Note).filter(Note.customer_id == customer_id)
+
+    if search:
+        search_pattern = f"%{search}%"
+        query = query.filter(Note.content.ilike(search_pattern))
+
+    return query.count()
 
 
 def get_note_by_id(db: Session, note_id: int) -> Note | None:

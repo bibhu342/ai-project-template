@@ -26,3 +26,13 @@ class NoteOut(BaseModel):
     content: str
     created_at: datetime
     updated_at: datetime
+
+
+class NoteListResponse(BaseModel):
+    """Schema for paginated note list responses."""
+
+    items: list[NoteOut]
+    total: int
+    limit: int
+    offset: int
+    has_more: bool

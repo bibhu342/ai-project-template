@@ -93,9 +93,10 @@ def test_notes_crud_flow():
     # 5) List notes for customer (no auth required)
     r = client.get(f"/api/customers/{customer_id}/notes")
     assert r.status_code == 200
-    notes = r.json()
-    assert len(notes) == 1
-    assert notes[0]["id"] == note_id
+    response_data = r.json()
+    assert response_data["total"] == 1
+    assert len(response_data["items"]) == 1
+    assert response_data["items"][0]["id"] == note_id
 
     # 6) Update note as owner (user 1) - should work
     update_payload = {"content": "Updated note content"}
@@ -123,8 +124,9 @@ def test_notes_crud_flow():
     # 10) Verify note is gone
     r = client.get(f"/api/customers/{customer_id}/notes")
     assert r.status_code == 200
-    notes = r.json()
-    assert len(notes) == 0
+    response_data = r.json()
+    assert response_data["total"] == 0
+    assert len(response_data["items"]) == 0
 
     # Cleanup
     client.delete(f"/api/customers/{customer_id}")
@@ -226,7 +228,9 @@ def test_multiple_notes_ordering():
     # List notes - should be in reverse order (newest first)
     r = client.get(f"/api/customers/{customer_id}/notes")
     assert r.status_code == 200
-    notes = r.json()
+    response_data = r.json()
+    assert response_data["total"] == 3
+    notes = response_data["items"]
     assert len(notes) == 3
     # Newest note should be first
     assert notes[0]["id"] == note_ids[2]

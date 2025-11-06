@@ -1,13 +1,14 @@
 # app/routers/notes.py
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from ..deps import get_db
-from ..schemas.note import NoteCreate, NoteUpdate, NoteOut
+from ..schemas.note import NoteCreate, NoteUpdate, NoteOut, NoteListResponse
 from ..schemas.user import UserOut
 from ..repositories.note_repo import (
     create_note,
     get_notes_by_customer,
+    count_notes_by_customer,
     get_note_by_id,
     update_note_content,
     delete_note,
@@ -36,19 +37,45 @@ def create_note_endpoint(
     return note
 
 
-@router.get("/customers/{customer_id}/notes", response_model=list[NoteOut])
+@router.get("/customers/{customer_id}/notes", response_model=NoteListResponse)
 def list_notes_endpoint(
     customer_id: int,
+    limit: int = Query(
+        default=100, ge=1, le=1000, description="Number of notes per page"
+    ),
+    offset: int = Query(default=0, ge=0, description="Number of notes to skip"),
+    search: str | None = Query(
+        default=None, description="Search notes by content (case-insensitive)"
+    ),
     db: Session = Depends(get_db),
 ):
-    """List all notes for a customer. No authentication required."""
+    """
+    List notes for a customer with pagination and search.
+
+    - **limit**: Maximum number of notes to return (1-1000, default 100)
+    - **offset**: Number of notes to skip (default 0)
+    - **search**: Filter notes by content (case-insensitive partial match)
+
+    Returns notes ordered by created_at DESC (newest first).
+    """
     # Check if customer exists
     customer = get_customer_by_id(db, customer_id)
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
 
-    notes = get_notes_by_customer(db, customer_id)
-    return notes
+    # Get total count
+    total = count_notes_by_customer(db, customer_id, search)
+
+    # Get notes for current page
+    notes = get_notes_by_customer(db, customer_id, limit, offset, search)
+
+    return NoteListResponse(
+        items=notes,
+        total=total,
+        limit=limit,
+        offset=offset,
+        has_more=(offset + len(notes)) < total,
+    )
 
 
 @router.put("/notes/{note_id}", response_model=NoteOut)
