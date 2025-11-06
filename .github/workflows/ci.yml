@@ -86,10 +86,7 @@ jobs:
           pip install -r requirements.txt
           pip install pytest httpx black ruff coverage bandit pip-audit
       - name: Lint & format check
-        run: |
-          # Exclude backup/legacy folders from style checks
-          black --check . --exclude "migrations_bak"
-          ruff check . --exclude migrations_bak
+        run: make lint
 
       - name: Security checks (Bandit + pip-audit)
         run: |
@@ -122,10 +119,7 @@ jobs:
         env:
           DATABASE_URL: ${{ env.DATABASE_URL }}
           PYTHONPATH: ${{ env.PYTHONPATH }}
-        run: |
-          coverage run -m pytest -q
-          coverage xml
-          coverage report --fail-under=80
+        run: make test
 
   # Job 2: Docker integration test (production-like validation)
   docker-test:
