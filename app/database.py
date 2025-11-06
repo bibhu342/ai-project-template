@@ -7,15 +7,25 @@ from sqlalchemy import create_engine, MetaData
 from sqlalchemy.orm import sessionmaker, declarative_base
 
 # Read from env. In docker compose, this is already set.
-DATABASE_URL = os.getenv(
-    "DATABASE_URL",
-    "postgresql+psycopg://bibhu:supersecure@postgres:5432/ai_lab",
-)
+# Use file-based SQLite for testing to avoid database pollution
+_testing = os.getenv("TESTING", "false").lower() == "true"
+if _testing:
+    # Always use SQLite for tests, ignore DATABASE_URL from .env
+    DATABASE_URL = "sqlite:///./test.db"
+else:
+    DATABASE_URL = os.getenv(
+        "DATABASE_URL",
+        "postgresql+psycopg://bibhu:supersecure@postgres:5432/ai_lab",
+    )
+
+# Use check_same_thread=False for SQLite to work with FastAPI
+connect_args = {"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
 
 engine = create_engine(
     DATABASE_URL,
     pool_pre_ping=True,
     future=True,
+    connect_args=connect_args,
 )
 
 SessionLocal = sessionmaker(

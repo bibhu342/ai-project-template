@@ -1,5 +1,5 @@
 # app/deps.py
-from app.db import SessionLocal
+from app.database import SessionLocal
 
 
 def get_db():

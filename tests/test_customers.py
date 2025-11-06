@@ -1,11 +1,7 @@
 # tests/test_customers.py
-from fastapi.testclient import TestClient
-from app.main import app
-
-client = TestClient(app)
 
 
-def test_customers_crud_flow():
+def test_customers_crud_flow(client):
     # 1) create
     payload = {"name": "PyTest User", "email": "pytest.user@example.com"}
     r = client.post("/api/customers", json=payload)

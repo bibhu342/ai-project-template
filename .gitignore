@@ -18,6 +18,10 @@ env_dml/
 coverage.xml
 htmlcov/
 
+# Test database
+test.db
+test.db-journal
+
 # Data / models (ML model files, not source code)
 data/raw/
 data/processed/
