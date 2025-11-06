@@ -25,9 +25,12 @@ jobs:
       - name: Deploy via SSH
         env:
           SERVER: ${{ secrets.STAGING_HOST }}
-          USER: ${{ secrets.STAGING_USER }}
         run: |
-          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes ${USER}@${SERVER} << 'ENDSSH'
+          # Preflight: verbose SSH to validate auth and show which key is offered
+          ssh -vvv -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes bibhu342@${SERVER} 'echo preflight-ok'
+
+          # Deploy via heredoc
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes bibhu342@${SERVER} << 'ENDSSH'
             set -euo pipefail
 
             # Ensure ~/app exists and is a git repo
