@@ -312,7 +312,7 @@ jobs:
 
       - name: Upload draft migration artifact
         if: ${{ hashFiles('tmp/alembic-drift.py') != '' }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: alembic-drift
           path: tmp/alembic-drift.py
