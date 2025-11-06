@@ -31,3 +31,10 @@ reports/
 # OS
 .DS_Store
 Thumbs.db
+
+# Temporary debug/test scripts
+check_staging.ps1
+fix_image.sh
+force_update_staging.ps1
+init_schema.sql
+test_live_notes.ps1
