@@ -11,20 +11,23 @@ jobs:
     environment: staging
 
     steps:
-      - name: Setup SSH agent and known_hosts
+      - name: Setup SSH agent, key, and known_hosts
         run: |
           mkdir -p ~/.ssh
           ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
           eval "$(ssh-agent -s)"
           # Add private key from secret; normalize CRLF to LF to avoid parse issues
           printf '%s' "${{ secrets.STAGING_SSH_KEY }}" | tr -d '\r' | ssh-add -
+          # Also write key to a file for -i usage as a fallback
+          printf '%s' "${{ secrets.STAGING_SSH_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
 
       - name: Deploy via SSH
         env:
           SERVER: ${{ secrets.STAGING_HOST }}
           USER: ${{ secrets.STAGING_USER }}
         run: |
-          ssh -o StrictHostKeyChecking=yes ${USER}@${SERVER} << 'ENDSSH'
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes ${USER}@${SERVER} << 'ENDSSH'
             set -euo pipefail
 
             # Ensure ~/app exists and is a git repo
