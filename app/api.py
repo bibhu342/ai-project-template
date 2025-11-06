@@ -13,6 +13,11 @@ def health():
     return {"status": "ok"}
 
 
+@router.get("/version")
+def version():
+    return {"version": "0.1.15", "features": ["customers", "notes", "auth"]}
+
+
 router.include_router(customers_router)  # -> /api/customers/...
 router.include_router(notes_router)  # -> /api/customers/{id}/notes, /api/notes/{id}
 router.include_router(auth_router)  # -> /api/auth/...
