@@ -30,13 +30,13 @@ VENV_ACTIVATE_WIN := $(VENV_DIR)/Scripts/activate
 
 .DEFAULT_GOAL := help
 
-.PHONY: help dev db db-logs db-stop db-down shell venv lint format typecheck test coverage migrate revision downgrade current heads stamp prune
+.PHONY: help dev db db-logs db-stop db-down shell venv lint format typecheck test coverage check migrate revision downgrade current heads stamp reset-db seed prune
 
 help: ## List available targets and examples (no commands executed)
 	@echo "Available targets:" && \
 	printf "\nDevelopment:\n  venv      - Create .venv virtual environment\n  shell     - Activate .venv and open interactive subshell\n  dev       - Run API with reload (uvicorn)\n  db        - Start dev DB via compose (service=$(DB_SERVICE))\n" && \
-	printf "\nCode quality:\n  lint      - Ruff + Black (check)\n  format    - Black (write)\n  typecheck - mypy (if installed)\n  test      - Pytest (-q)\n" && \
-	printf "\nDatabase & migrations:\n  migrate   - Alembic upgrade head\n  revision  - Alembic revision (m=\"msg\")\n  downgrade - Alembic downgrade -1\n  current   - Alembic current\n" && \
+	printf "\nCode quality:\n  lint      - Ruff + Black (check)\n  format    - Black (write)\n  typecheck - mypy (if installed)\n  test      - Pytest (-q)\n  check     - Lint then tests\n" && \
+	printf "\nDatabase & migrations:\n  migrate   - Alembic upgrade head\n  revision  - Alembic revision (m=\"msg\")\n  downgrade - Alembic downgrade -1\n  current   - Alembic current\n  reset-db  - Reset DB (CONFIRM=1; down -v, up, migrate)\n  seed      - Seed data (placeholder)\n" && \
 	printf "\nDocker / cleanup:\n  prune     - Safe docker prune (images/containers/networks)\n" && \
 	printf "\nExamples:\n  make venv\n  make shell\n  make dev PORT=9000\n  make revision m=\"add note index\"\n"
 
@@ -110,6 +110,9 @@ test: ## Run pytest quietly
 	@echo "Running tests..." && \
 	$(PYTHON) -m $(PYTEST) -q
 
+check: ## Lint then run tests
+	@$(MAKE) lint && $(MAKE) test
+
 coverage: ## Run tests with coverage and HTML report
 	@$(PYTHON) -m $(PYTEST) --maxfail=1 --disable-warnings --cov=app --cov-report=term-missing --cov-report=html
 
@@ -141,6 +144,20 @@ stamp: ## Stamp DB to head without migrations (requires rev=<revision|head>)
 	# Example: make stamp rev=head
 	@if [ -z "$(rev)" ]; then echo "Usage: make stamp rev=head"; exit 2; fi; \
 	$(ALEMBIC) $(AL_OPTS) stamp $(rev)
+
+reset-db: ## Reset DB (CONFIRM=1 required): down -v, up, migrate
+	@if [ "$(CONFIRM)" != "1" ]; then echo "Refusing to reset DB. Use: make reset-db CONFIRM=1"; exit 2; fi; \
+	if [ -n "$(DOCKER_COMPOSE_FILE)" ] && [ -n "$(DOCKER_COMPOSE)" ]; then \
+	  echo "Bringing down DB (volumes!)..."; \
+	  $(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_FILE) down -v; \
+	  echo "Starting $(DB_SERVICE)..."; \
+	  $(DOCKER_COMPOSE) -f $(DOCKER_COMPOSE_FILE) up -d $(DB_SERVICE); \
+	else echo "Compose not detected."; exit 2; fi; \
+	echo "Upgrading schema to head..."; \
+	$(ALEMBIC) $(AL_OPTS) upgrade head
+
+seed: ## Seed data (placeholder)
+	@echo "no seed script wired"
 
 # ---------------------
 # Docker / Cleanup

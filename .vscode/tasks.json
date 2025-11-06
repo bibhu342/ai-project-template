@@ -1,0 +1,260 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Make: help",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "make help"],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Make: venv",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "make venv"],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Make: shell",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "make shell"],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Make: dev",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "make dev"],
+      "problemMatcher": [],
+      "isBackground": true,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Make: lint",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "make lint"],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Make: format",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "make format"],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Make: test",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "make test"],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Make: coverage",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "make coverage"],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Make: db",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "make db"],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Make: db-logs",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "make db-logs"],
+      "problemMatcher": [],
+      "isBackground": true,
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": true,
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "Make: db-stop",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "make db-stop"],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Make: db-down",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "make db-down"],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Make: migrate",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "make migrate"],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Make: revision",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "make revision m='${input:revisionMessage}'"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Make: downgrade",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "make downgrade"],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Make: current",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "make current"],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Make: heads",
+      "type": "shell",
+      "command": "bash",
+      "args": ["-lc", "make heads"],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    },
+    {
+      "label": "Make: stamp",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "make stamp rev='${input:stampRevision}'"
+      ],
+      "problemMatcher": [],
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "focus": false,
+        "panel": "shared"
+      }
+    }
+  ],
+  "inputs": [
+    {
+      "id": "revisionMessage",
+      "type": "promptString",
+      "description": "Migration message (e.g., 'add users table')"
+    },
+    {
+      "id": "stampRevision",
+      "type": "promptString",
+      "description": "Revision to stamp (e.g., 'head' or revision ID)",
+      "default": "head"
+    }
+  ]
+}
