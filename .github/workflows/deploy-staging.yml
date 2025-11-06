@@ -11,14 +11,21 @@ jobs:
     environment: staging
 
     steps:
-      - name: Deploy to Staging Server
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.STAGING_HOST }}
-          username: ${{ secrets.STAGING_USER }}
-          key: ${{ secrets.STAGING_SSH_KEY }}
-          script_stop: true
-          script: |
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.STAGING_SSH_KEY }}" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -H ${{ secrets.STAGING_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy via SSH
+        env:
+          SERVER: ${{ secrets.STAGING_HOST }}
+          USER: ${{ secrets.STAGING_USER }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -o StrictHostKeyChecking=yes ${USER}@${SERVER} << 'ENDSSH'
+            set -euo pipefail
+
             # Ensure ~/app exists and is a git repo
             if [ ! -d ~/app ]; then
               mkdir -p ~/app
@@ -49,7 +56,7 @@ jobs:
             # Login to GHCR
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-            # Pull latest images
+            # Pull latest images (ignore failures to allow first-time builds)
             docker compose pull || true
 
             # Run migrations
@@ -62,3 +69,4 @@ jobs:
             sleep 10
             chmod +x smoke.sh
             ./smoke.sh
+          ENDSSH
