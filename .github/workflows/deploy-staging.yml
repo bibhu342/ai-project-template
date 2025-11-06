@@ -70,12 +70,13 @@ jobs:
             fi
 
             # Set image variables
-            IMAGE_NAME=${{ github.repository }}
+            export IMAGE_NAME=${{ github.repository }}
             # Strip 'v' prefix from tag (v0.1.7 -> 0.1.7) to match GHCR image tags
-            IMAGE_TAG=${{ github.ref_name }}
+            export IMAGE_TAG=${{ github.ref_name }}
             IMAGE_TAG="${IMAGE_TAG#v}"
+            export IMAGE_TAG
 
-            # Update .env.staging with current image variables (remove old ones first)
+            # Also write to .env.staging for persistence (remove old ones first)
             sed -i '/^IMAGE_NAME=/d' .env.staging
             sed -i '/^IMAGE_TAG=/d' .env.staging
             echo "IMAGE_NAME=${IMAGE_NAME}" >> .env.staging
