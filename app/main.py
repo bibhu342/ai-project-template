@@ -14,7 +14,7 @@ logging.basicConfig(
 
 app = FastAPI(
     title="AI Project API",
-    version="0.1.15",
+    version="0.1.20",
     description="API with request logging, rate limiting, and metrics",
 )
 
