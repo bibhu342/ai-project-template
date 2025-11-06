@@ -71,7 +71,9 @@ jobs:
 
             # Export image variables
             export IMAGE_NAME=${{ github.repository }}
+            # Strip 'v' prefix from tag (v0.1.7 -> 0.1.7) to match GHCR image tags
             export IMAGE_TAG=${{ github.ref_name }}
+            IMAGE_TAG="${IMAGE_TAG#v}"
 
             # Login to GHCR
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
