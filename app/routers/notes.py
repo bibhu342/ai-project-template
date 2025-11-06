@@ -3,6 +3,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from ..deps import get_db
+from ..metrics import metrics
 from ..schemas.note import NoteCreate, NoteUpdate, NoteOut, NoteListResponse
 from ..schemas.user import UserOut
 from ..repositories.note_repo import (
@@ -34,6 +35,10 @@ def create_note_endpoint(
 
     # Create note with current user as owner
     note = create_note(db, customer_id, current_user.id, payload.content)
+
+    # Track metric
+    metrics.increment("notes_created_total")
+
     return note
 
 
@@ -97,6 +102,10 @@ def update_note_endpoint(
         )
 
     updated_note = update_note_content(db, note_id, payload.content)
+
+    # Track metric
+    metrics.increment("notes_updated_total")
+
     return updated_note
 
 
@@ -118,4 +127,8 @@ def delete_note_endpoint(
         )
 
     delete_note(db, note_id)
+
+    # Track metric
+    metrics.increment("notes_deleted_total")
+
     return None  # 204 No Content

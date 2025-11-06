@@ -3,8 +3,12 @@
 from __future__ import annotations
 
 import sys
+import os
 from pathlib import Path
 import importlib.util
+
+# Set testing environment variable
+os.environ["TESTING"] = "true"
 
 PROJECT_ROOT = Path(__file__).resolve().parent
 if str(PROJECT_ROOT) not in sys.path:
